@@ -1,0 +1,16 @@
+{
+  "name": "mella-backend",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "scripts": {
+    "dev": "nodemon index.js"
+  },
+  "dependencies": {
+    "express": "^4.17.1",
+    "mongodb": "^3.3.3",
+    "mongoose": "^5.7.9",
+    "nodemon": "^1.19.4"
+  },
+  "devDependencies": {}
+}
