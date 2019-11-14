@@ -48,8 +48,15 @@ const userSchema = new mongoose.Schema({
       "One skill is a must!"
     ]
   },
-  subSkills: {
-    type: [String]
+  skillTags: {
+    type: [String],
+    required: true,
+    validate: {
+      validator: function(skillTags) {
+        return skillTags && skillTags.length > 0;
+      },
+      message: "One atleast one skill tag per skill is expected!"
+    }
   }
 });
 

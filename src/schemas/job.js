@@ -1,9 +1,19 @@
 const mongoose = require("mongoose");
 
 const jobSchema = new mongoose.Schema({
-  name: {
+  title: {
     type: String,
-    required: true
+    required: true,
+    unique: true
+  },
+  tags: {
+    type: [String],
+    validate: {
+      validator: function(tags) {
+        return tags && tags.length > 0;
+      },
+      message: "Atleast one job tag is expected"
+    }
   }
 });
 
