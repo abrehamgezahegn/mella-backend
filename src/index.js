@@ -12,7 +12,7 @@ const authorize = require("./middlewares/authorize");
 
 const app = express();
 
-// mongoose db connection
+// mongoose db
 mongoose
   .connect("mongodb://localhost/mella", {
     useNewUrlParser: true,
