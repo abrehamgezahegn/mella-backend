@@ -1,5 +1,7 @@
 const express = require("express");
-const AfricasTalking = require("africastalking")({
+const at = require("africastalking");
+
+const AfricasTalking = at({
   apiKey: process.env.AFRICAS_TALKING_API_KEY,
   username: "sandbox"
 });
@@ -7,6 +9,7 @@ const AfricasTalking = require("africastalking")({
 const { User } = require("../schemas");
 const passwordHash = require("../utils/passwordHash");
 const getFourDigits = require("../utils/getFourDigits");
+const bcrypt = require("bcrypt");
 
 const sms = AfricasTalking.SMS;
 const router = express.Router();
@@ -98,6 +101,28 @@ router.put("/signup", async (req, res) => {
     console.log(err);
     res.status(500).send(err);
   }
+});
+
+router.post("/signin", async (req, res) => {
+  // fetch email || phone_number  and password
+  const { emailOrPhoneNumber, password } = req.body;
+
+  // find by email || phone
+  const user = await User.findOne({
+    $or: [{ email: emailOrPhoneNumber }, { phoneNumber: emailOrPhoneNumber }]
+  });
+
+  if (!user) return res.status(404).send("email or password not correct!");
+
+  // bcrypt password
+  const isValid = await bcrypt.compare(password, user.password);
+  if (!isValid) return res.status(404).send("email or password not correct!");
+
+  // generate token
+  const token = user.generateAuthToken();
+
+  // return user and token
+  res.send({ user, token });
 });
 
 module.exports = router;
