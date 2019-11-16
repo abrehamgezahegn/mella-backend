@@ -1,6 +1,6 @@
 const express = require("express");
 const AfricasTalking = require("africastalking")({
-  apiKey: "9226591bd449da342c47729778b10799687afdbfb25eb36c683d281616457c65",
+  apiKey: process.env.AFRICAS_TALKING_API_KEY,
   username: "sandbox"
 });
 
@@ -43,7 +43,7 @@ router.post("/register_phone", async (req, res) => {
 });
 
 router.post("/confirm_phone", async (req, res) => {
-  const { code, phoneNumber, role } = req.body;
+  const { code, phoneNumber } = req.body;
 
   try {
     const sentCode = process.env[phoneNumber];
@@ -53,8 +53,11 @@ router.post("/confirm_phone", async (req, res) => {
 
     const user = new User({ phoneNumber });
     await user.save({ validateBeforeSave: false });
-    res.send({ message: "Success!, Welcome to the family.", user });
+
+    const token = user.generateAuthToken();
+    res.send({ message: "Success!, Welcome to the family.", user, token });
   } catch (err) {
+    console.log(err);
     res.status(500).send(err);
   }
 });
@@ -88,7 +91,9 @@ router.put("/signup", async (req, res) => {
       role: updatedUser.role
     };
 
-    res.send(data);
+    const token = updatedUser.generateAuthToken();
+
+    res.send({ data, token });
   } catch (err) {
     console.log(err);
     res.status(500).send(err);
