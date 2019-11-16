@@ -1,11 +1,11 @@
 const express = require("express");
 const AfricasTalking = require("africastalking")({
-  apiKey: "9226591bd449da342c47729778b10799687afdbfb25eb36c683d281616457c65", // use your sandbox app API key for development in the test environment
+  apiKey: "9226591bd449da342c47729778b10799687afdbfb25eb36c683d281616457c65",
   username: "sandbox"
 });
 
 const { User } = require("../schemas");
-
+const passwordHash = require("../utils/passwordHash");
 const getFourDigits = require("../utils/getFourDigits");
 
 const sms = AfricasTalking.SMS;
@@ -53,7 +53,6 @@ router.post("/confirm_phone", async (req, res) => {
 
     const user = new User({ phoneNumber });
     await user.save({ validateBeforeSave: false });
-    console.log(user);
     res.send({ message: "Success!, Welcome to the family.", user });
   } catch (err) {
     res.status(500).send(err);
@@ -63,14 +62,33 @@ router.post("/confirm_phone", async (req, res) => {
 router.put("/signup", async (req, res) => {
   const { id } = req.body;
   try {
+    const user = await User.findById(id);
+    if (!user) return res.status(404).send("user not found.");
+
+    const hash = await passwordHash(req.body.password);
+    req.body.password = hash;
+
     const updatedUser = await User.findByIdAndUpdate(
       { _id: id },
       {
-        ...req.body
+        $set: req.body
       },
-      { new: true, runValidators: true }
+      { new: true }
     );
-    res.send(updatedUser);
+
+    const data = {
+      skills: updatedUser.skills,
+      skillTags: updatedUser.skillTags,
+      _id: updatedUser._id,
+      phoneNumber: updatedUser.phoneNumber,
+      avatar: updatedUser.avatar,
+      email: updatedUser.email,
+      lastName: updatedUser.lastName,
+      firstName: updatedUser.firstName,
+      role: updatedUser.role
+    };
+
+    res.send(data);
   } catch (err) {
     console.log(err);
     res.status(500).send(err);
