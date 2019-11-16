@@ -45,12 +45,17 @@ const userSchema = new mongoose.Schema({
       function() {
         return this.role === "pro";
       },
-      "One skill is a must!"
+      "One skill is a expected!"
     ]
   },
   skillTags: {
     type: [String],
-    required: true,
+    required: [
+      function() {
+        return this.role === "pro";
+      },
+      "One skill tag is a expected!"
+    ],
     validate: {
       validator: function(skillTags) {
         return skillTags && skillTags.length > 0;
