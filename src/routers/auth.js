@@ -11,15 +11,16 @@ const getFourDigits = require("../utils/getFourDigits");
 const sms = AfricasTalking.SMS;
 const router = express.Router();
 
-router.post("/phone", async (req, res) => {
+router.post("/register_phone", async (req, res) => {
   const phoneNumber = req.body.phoneNumber;
   try {
     // return if phoneNumber exists;
-    // const user = await User.findOne().where({ phoneNumber });
+    const user = await User.findOne().where({ phoneNumber });
+    if (user) return res.send("Phone number already exists");
 
     //save number with code in environment
     const code = getFourDigits(1000, 9000);
-    process.env[phoneNumber] = code;
+    process.env[phoneNumber] = code; // TODO: save to database
 
     // send code to number
     const response = await sms.send({
@@ -46,30 +47,21 @@ router.post("/confirm_phone", async (req, res) => {
 
   try {
     const sentCode = process.env[phoneNumber];
-    console.log("sent code .....: ", sentCode);
 
     if (sentCode !== code)
       return res.status(403).send("Code doesn't match with what we sent");
 
+    const user = new User({ phoneNumber });
+    await user.save({ validateBeforeSave: false });
+    console.log(user);
     res.send({ message: "Success!, Welcome to the family.", user });
   } catch (err) {
-    console.log(err);
     res.status(500).send(err);
   }
 });
 
 router.put("/signup", async (req, res) => {
-  const {
-    firstName,
-    lastName,
-    email,
-    role,
-    skills,
-    skillTags,
-    avatar,
-    id
-  } = req.body;
-
+  const { id } = req.body;
   try {
     const updatedUser = await User.findByIdAndUpdate(
       { _id: id },
@@ -78,7 +70,9 @@ router.put("/signup", async (req, res) => {
       },
       { new: true, runValidators: true }
     );
+    res.send(updatedUser);
   } catch (err) {
+    console.log(err);
     res.status(500).send(err);
   }
 });

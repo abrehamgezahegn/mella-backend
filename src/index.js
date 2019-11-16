@@ -26,7 +26,7 @@ mongoose
 
 app.use(express.json());
 
-app.use("/job", authorize, jobRouter);
+app.use("/job", jobRouter);
 app.use("/auth", authRouter);
 app.use("/", rootRouter);
 
