@@ -4,8 +4,9 @@ const express = require("express");
 const mongoose = require("mongoose");
 // Routers
 const rootRouter = require("./routers/root");
-const jobRouter = require("./routers/job");
 const authRouter = require("./routers/auth");
+const jobRouter = require("./routers/job");
+const orderRouter = require("./routers/order");
 
 //middlewares
 const authorize = require("./middlewares/authorize");
@@ -30,6 +31,7 @@ app.use(express.json());
 
 app.use("/job", jobRouter);
 app.use("/auth", authRouter);
+app.use("/order", authorize, orderRouter);
 app.use("/", rootRouter);
 
 const port = process.env.PORT || 3000;

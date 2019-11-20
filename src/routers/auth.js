@@ -23,7 +23,7 @@ router.post("/register_phone", async (req, res) => {
 
     //save number with code in environment
     const code = getFourDigits(1000, 9000);
-    process.env[phoneNumber] = code; // TODO: save to database
+    process.env[phoneNumber] = code; // TODO: save to database with a token that expires
 
     // send code to number
     const response = await sms.send({

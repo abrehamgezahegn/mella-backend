@@ -1,26 +1,48 @@
 const mongoose = require("mongoose");
 
-const userSchema = new mongoose.Schema({
+const orderSchema = new mongoose.Schema({
   job: {
     type: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Job"
-    },
+      ref: "Job",
+      required: true
+    }
+  },
+  jobTags: {
+    type: [String],
     required: true
   },
-  pro: {
+  candidatePros: {
+    // pros that  accepted the request
+    type: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        res: "User"
+      }
+    ]
+  },
+  requestedPros: {
+    // pros that received a request
+    type: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        res: "User"
+      }
+    ]
+  },
+  acceptedPro: {
+    // pro chosen by the client
     type: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User"
-    },
-    required: true
+    }
   },
   client: {
     type: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User"
-    },
-    required: true
+      ref: "User",
+      required: true
+    }
   },
   scheduled: {
     type: Boolean
@@ -42,12 +64,12 @@ const userSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ["pending", "canceled", "matched"],
+    enum: ["pending", "canceled", "ongoing", "complete"],
     default: "pending",
     required: true
   }
 });
 
-const User = mongoose.model("User", userSchema);
+const Order = mongoose.model("Order", orderSchema);
 
-module.exports = User;
+module.exports = Order;
