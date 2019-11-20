@@ -1,12 +1,14 @@
 const express = require("express");
 const at = require("africastalking");
+const moment = require("moment");
+const errorDebugger = require("debug")("app:error");
 
 const AfricasTalking = at({
   apiKey: process.env.AFRICAS_TALKING_API_KEY,
   username: "sandbox"
 });
 
-const { User } = require("../schemas");
+const { User, PhoneNumberList } = require("../schemas");
 const passwordHash = require("../utils/passwordHash");
 const getFourDigits = require("../utils/getFourDigits");
 const bcrypt = require("bcrypt");
@@ -23,7 +25,31 @@ router.post("/register_phone", async (req, res) => {
 
     //save number with code in environment
     const code = getFourDigits(1000, 9000);
-    process.env[phoneNumber] = code; // TODO: save to database with a token that expires
+
+    const expiryDate = moment().add(
+      process.env.REGISTRATION_CODE_EXPIRATION_LIFE,
+      "m"
+    );
+
+    const phoneNumberDb = await PhoneNumberList.findOne().where({
+      phoneNumber
+    });
+    if (phoneNumberDb) {
+      await PhoneNumberList.findByIdAndUpdate(
+        {
+          _id: phoneNumberDb._id
+        },
+        { code, expiryDate },
+        { new: true, runValidators: true, useFindAndModify: false }
+      );
+    } else {
+      const phoneNumberList = new PhoneNumberList({
+        code,
+        expiryDate,
+        phoneNumber
+      });
+      await phoneNumberList.save();
+    }
 
     // send code to number
     const response = await sms.send({
@@ -41,7 +67,8 @@ router.post("/register_phone", async (req, res) => {
       response
     });
   } catch (err) {
-    res.send(err);
+    errorDebugger(err);
+    res.status(500).send(err);
   }
 });
 
@@ -49,9 +76,16 @@ router.post("/confirm_phone", async (req, res) => {
   const { code, phoneNumber } = req.body;
 
   try {
-    const sentCode = process.env[phoneNumber];
+    const phoneNumberDb = await PhoneNumberList.findOne().where({
+      phoneNumber
+    });
 
-    if (sentCode !== code)
+    if (moment().isAfter(phoneNumberDb.expiryDate))
+      return res
+        .status(404)
+        .send({ status: "expired", message: "Code has expired." });
+
+    if (phoneNumberDb.code !== code)
       return res.status(403).send("Code doesn't match with what we sent");
 
     const user = new User({ phoneNumber });
@@ -61,6 +95,7 @@ router.post("/confirm_phone", async (req, res) => {
     res.send({ message: "Success!, Welcome to the family.", user, token });
   } catch (err) {
     console.log(err);
+    errorDebugger(err);
     res.status(500).send(err);
   }
 });

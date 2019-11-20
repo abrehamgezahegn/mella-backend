@@ -31,7 +31,7 @@ app.use(express.json());
 
 app.use("/job", jobRouter);
 app.use("/auth", authRouter);
-app.use("/order", authorize, orderRouter);
+app.use("/order", orderRouter);
 app.use("/", rootRouter);
 
 const port = process.env.PORT || 3000;
