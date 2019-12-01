@@ -1,6 +1,7 @@
 const express = require("express");
-const { Order } = require("../schemas");
+const { Order, User } = require("../schemas");
 const jwt = require("jsonwebtoken");
+const getDistanceFromLatLonInKm = require("../utils/calculateDistance");
 
 const router = express.Router();
 
@@ -17,15 +18,53 @@ router.get("/all", async (req, res) => {
   }
 });
 
-router.post("/create", (req, res) => {
+router.post("/create", async (req, res) => {
   // order gets created here
   // fetch client, job , jobTag, longitude, latitude ,
   // isScheduled , time
   //  note
+  const order = req.body;
   // fetch pros with job, online=true ,
   // location = in range
   //  order by rating
-  // send notification to top 15 users
+  const maybePros = await User.find()
+    .and({ online: true })
+    .and({ job: order.job })
+    .and({ _id: "5dd5c57a7aea36646c9068cf" });
+
+  const rankedByDistance = maybePros
+    .map(item => {
+      const distanceFromClient = getDistanceFromLatLonInKm(
+        order.latitude,
+        order.longitude,
+        item.latitude,
+        order.longitude
+      );
+      return { ...item, distanceFromClient };
+    })
+    .sort((a, b) => {
+      return a.distanceFromClient - b.distanceFromClient;
+    })
+    .splice(0, 15);
+
+  // send notification to requested users 15 users TODO: send push notification
+
+  const requestedPros = rankedByDistance.map(item => item._id);
+
+  const orderCol = new Order({
+    client: order.client,
+    job: order.job,
+    jobTags: order.jobTags,
+    longitude: order.longitude,
+    latitude: order.latitude,
+    status: "pending",
+    requestedPros,
+    candidatePros: [],
+    acceptedPro: null,
+    scheduled: order.scheduled,
+    scheduleTime: order.scheduled,
+    note: order.note
+  });
   // save to db with order = pending, requestedPros = [{...15 pros}]
   // candidatePros = [] , confirmedUser = null
 });

@@ -59,6 +59,14 @@ const userSchema = new mongoose.Schema({
       },
       message: "One atleast one skill tag per skill is expected!"
     }
+  },
+  longitude: {
+    type: Number,
+    required: true
+  },
+  latitude: {
+    type: Number,
+    require: true
   }
 });
 

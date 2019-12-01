@@ -7,6 +7,7 @@ const rootRouter = require("./routers/root");
 const authRouter = require("./routers/auth");
 const jobRouter = require("./routers/job");
 const orderRouter = require("./routers/order");
+const userRouter = require("./routers/user");
 
 //middlewares
 const authorize = require("./middlewares/authorize");
@@ -32,6 +33,7 @@ app.use(express.json());
 app.use("/job", jobRouter);
 app.use("/auth", authRouter);
 app.use("/order", orderRouter);
+app.use("/user", userRouter);
 app.use("/", rootRouter);
 
 const port = process.env.PORT || 3000;
