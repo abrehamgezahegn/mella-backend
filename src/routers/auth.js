@@ -5,7 +5,7 @@ const errorDebugger = require("debug")("app:error");
 
 const AfricasTalking = at({
   apiKey: process.env.AFRICAS_TALKING_API_KEY,
-  username: "sandbox"
+  username: "sandbox",
 });
 
 const { User, PhoneNumberList } = require("../schemas");
@@ -18,13 +18,15 @@ const router = express.Router();
 
 router.post("/register_phone", async (req, res) => {
   const phoneNumber = req.body.phoneNumber;
+  console.log("phone number", phoneNumber);
   try {
     // return if phoneNumber exists;
     const user = await User.findOne().where({ phoneNumber });
     if (user) return res.send("Phone number already exists");
 
-    //save number with code in environment
+    //save number with code in db
     const code = getFourDigits(1000, 9000);
+    console.log("random code is ", code);
 
     const expiryDate = moment().add(
       process.env.REGISTRATION_CODE_EXPIRATION_LIFE,
@@ -32,12 +34,12 @@ router.post("/register_phone", async (req, res) => {
     );
 
     const phoneNumberDb = await PhoneNumberList.findOne().where({
-      phoneNumber
+      phoneNumber,
     });
     if (phoneNumberDb) {
       await PhoneNumberList.findByIdAndUpdate(
         {
-          _id: phoneNumberDb._id
+          _id: phoneNumberDb._id,
         },
         { code, expiryDate },
         { new: true, runValidators: true, useFindAndModify: false }
@@ -46,7 +48,7 @@ router.post("/register_phone", async (req, res) => {
       const phoneNumberList = new PhoneNumberList({
         code,
         expiryDate,
-        phoneNumber
+        phoneNumber,
       });
       await phoneNumberList.save();
     }
@@ -55,7 +57,7 @@ router.post("/register_phone", async (req, res) => {
     const response = await sms.send({
       from: "8082",
       to: phoneNumber,
-      message: `${code} is your mella account verification code.`
+      message: `${code} is your mella account verification code.`,
     });
 
     if (response.SMSMessageData.Recipients[0].status !== "Success")
@@ -64,9 +66,10 @@ router.post("/register_phone", async (req, res) => {
     res.send({
       status: "success",
       message: "code sent successfully",
-      response
+      response,
     });
   } catch (err) {
+    console.log("err", err);
     errorDebugger(err);
     res.status(500).send(err);
   }
@@ -77,7 +80,7 @@ router.post("/confirm_phone", async (req, res) => {
 
   try {
     const phoneNumberDb = await PhoneNumberList.findOne().where({
-      phoneNumber
+      phoneNumber,
     });
 
     if (moment().isAfter(phoneNumberDb.expiryDate))
@@ -112,7 +115,7 @@ router.put("/signup", async (req, res) => {
     const updatedUser = await User.findByIdAndUpdate(
       { _id: id },
       {
-        $set: req.body
+        $set: req.body,
       },
       { new: true }
     );
@@ -126,7 +129,7 @@ router.put("/signup", async (req, res) => {
       email: updatedUser.email,
       lastName: updatedUser.lastName,
       firstName: updatedUser.firstName,
-      role: updatedUser.role
+      role: updatedUser.role,
     };
 
     const token = updatedUser.generateAuthToken();
@@ -144,7 +147,7 @@ router.post("/signin", async (req, res) => {
 
   // find by email || phone
   const user = await User.findOne({
-    $or: [{ email: emailOrPhoneNumber }, { phoneNumber: emailOrPhoneNumber }]
+    $or: [{ email: emailOrPhoneNumber }, { phoneNumber: emailOrPhoneNumber }],
   });
 
   if (!user) return res.status(404).send("email or password not correct!");

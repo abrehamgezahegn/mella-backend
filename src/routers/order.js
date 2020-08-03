@@ -19,54 +19,72 @@ router.get("/all", async (req, res) => {
 });
 
 router.post("/create", async (req, res) => {
-  // order gets created here
-  // fetch client, job , jobTag, longitude, latitude ,
-  // isScheduled , time
-  //  note
-  const order = req.body;
-  // fetch pros with job, online=true ,
-  // location = in range
-  //  order by rating
-  const maybePros = await User.find()
-    .and({ online: true })
-    .and({ job: order.job })
-    .and({ _id: "5dd5c57a7aea36646c9068cf" });
+  console.log("creat order hit");
+  try {
+    // order gets created here
+    // fetch client, job , jobTag, longitude, latitude ,
+    // isScheduled , time
+    //  note
 
-  const rankedByDistance = maybePros
-    .map(item => {
-      const distanceFromClient = getDistanceFromLatLonInKm(
-        order.latitude,
-        order.longitude,
-        item.latitude,
-        order.longitude
-      );
-      return { ...item, distanceFromClient };
-    })
-    .sort((a, b) => {
-      return a.distanceFromClient - b.distanceFromClient;
-    })
-    .splice(0, 15);
+    const order = req.body;
+    console.log("orderrrr", order);
+    // fetch pros with job, online=true ,
+    // location = in range
+    //  order by rating
+    const maybePros = await User.find()
+      .and({ role: "pro" })
+      .and({ online: true })
+      .and({ skills: order.job });
+    // .and({ _id: "5dd5c57a7aea36646c9068cf" });
 
-  // send notification to requested users 15 users TODO: send push notification
+    console.log("maybe pros", maybePros);
 
-  const requestedPros = rankedByDistance.map(item => item._id);
+    const rankedByDistance = maybePros
+      .map((item) => {
+        const distanceFromClient = getDistanceFromLatLonInKm(
+          order.latitude,
+          order.longitude,
+          item.latitude,
+          item.longitude
+        );
+        return { ...item, distanceFromClient };
+      })
+      .sort((a, b) => {
+        return a.distanceFromClient - b.distanceFromClient;
+      })
+      .splice(0, 15);
 
-  const orderCol = new Order({
-    client: order.client,
-    job: order.job,
-    jobTags: order.jobTags,
-    longitude: order.longitude,
-    latitude: order.latitude,
-    status: "pending",
-    requestedPros,
-    candidatePros: [],
-    acceptedPro: null,
-    scheduled: order.scheduled,
-    scheduleTime: order.scheduled,
-    note: order.note
-  });
-  // save to db with order = pending, requestedPros = [{...15 pros}]
-  // candidatePros = [] , confirmedUser = null
+    // send notification to requested users 15 users TODO: send push notification
+    const requestedPros = rankedByDistance.map((item) => item._id);
+
+    const orderCol = {
+      client: order.client,
+      job: order.job,
+      jobTags: order.jobTags,
+      longitude: order.longitude,
+      latitude: order.latitude,
+      status: "pending",
+      requestedPros,
+      candidatePros: [],
+      acceptedPro: null,
+      scheduled: order.scheduled,
+      scheduleTime: order.scheduled,
+      note: order.note,
+      locationName: order.locationName,
+    };
+
+    const orderDb = new Order(orderCol);
+
+    await orderDb.save({ validateBeforeSave: true });
+
+    res.send("Order create");
+
+    // save to db with order = pending, requestedPros = [{...15 pros}]
+    // candidatePros = [] , confirmedUser = null
+  } catch (error) {
+    res.status(500).send(error);
+    // console.log("create order error: ", error);
+  }
 });
 
 router.put("/accept_order", (req, res) => {

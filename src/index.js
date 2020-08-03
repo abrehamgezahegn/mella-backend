@@ -2,6 +2,8 @@ require("dotenv").config();
 
 const express = require("express");
 const mongoose = require("mongoose");
+const cors = require("cors");
+
 // Routers
 const rootRouter = require("./routers/root");
 const authRouter = require("./routers/auth");
@@ -19,16 +21,17 @@ mongoose
   .connect("mongodb://localhost/mella", {
     useNewUrlParser: true,
     useCreateIndex: true,
-    useUnifiedTopology: true
+    useUnifiedTopology: true,
   })
   .then(() => {
     console.log("connected to mongoose");
   })
-  .catch(err => {
+  .catch((err) => {
     console.log(err);
   });
 
 app.use(express.json());
+app.use(cors());
 
 app.use("/job", jobRouter);
 app.use("/auth", authRouter);
