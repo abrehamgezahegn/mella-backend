@@ -3,6 +3,8 @@ const { Order, User } = require("../schemas");
 const jwt = require("jsonwebtoken");
 const getDistanceFromLatLonInKm = require("../utils/calculateDistance");
 
+const { createMessages, sendMessages } = require("../utils/expoNotification");
+
 const router = express.Router();
 
 // I may have to use socket.io for realtime status updates
@@ -77,6 +79,12 @@ router.post("/create", async (req, res) => {
 
     await orderDb.save({ validateBeforeSave: true });
 
+    const messages = createMessages("Ohhh yene ayn", { name: "Some thing" }, [
+      "ExponentPushToken[B0a_C6Hq8HEy5xr-hIkbLA]",
+    ]);
+    console.log("notification mesages ", messages);
+    const notificationTickets = await sendMessages(messages);
+    console.log("tickets", notificationTickets);
     res.send("Order create");
 
     // save to db with order = pending, requestedPros = [{...15 pros}]
